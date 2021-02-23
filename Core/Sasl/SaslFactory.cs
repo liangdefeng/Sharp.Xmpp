@@ -86,7 +86,12 @@ namespace Sharp.Xmpp.Core.Sasl
 				{ "PLAIN", typeof(Sasl.Mechanisms.SaslPlain) },
 				{ "DIGEST-MD5", typeof(Sasl.Mechanisms.SaslDigestMd5) },
 				{ "SCRAM-SHA-1", typeof(Sasl.Mechanisms.SaslScramSha1) },
-			};
+                { "SCRAM-SHA-1-PLUS", typeof(Sasl.Mechanisms.SaslScramSha1) },
+                { "SCRAM-SHA-256", typeof(Sasl.Mechanisms.SaslScramSha256) },
+                { "SCRAM-SHA-256-PLUS", typeof(Sasl.Mechanisms.SaslScramSha256) },
+                { "SCRAM-SHA-512", typeof(Sasl.Mechanisms.SaslScramSha512) },
+                { "SCRAM-SHA-512-PLUS", typeof(Sasl.Mechanisms.SaslScramSha512) },
+            };
             foreach (string key in list.Keys)
                 Mechanisms.Add(key, list[key]);
         }
