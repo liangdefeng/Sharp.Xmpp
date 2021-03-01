@@ -12,7 +12,7 @@ The library fully implements the [XMPP Core](http://xmpp.org/rfcs/rfc3920.html) 
 messaging (IM) and presence functionality. In addition, the library offers support for most of the
 optional procotol extensions. More specifically, the following features are supported:
 
-+ SASL Authentication (PLAIN, DIGEST-MD5, and SCRAM-SHA-1)
++ SASL Authentication (PLAIN, DIGEST-MD5, SCRAM-SHA-1, SCRAM-SHA-256, SCRAM-SHA-512)
 + User Avatars
 + SOCKS5 and In-Band File-Transfer
 + In-Band Registration
