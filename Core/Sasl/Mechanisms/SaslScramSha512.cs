@@ -7,8 +7,8 @@ using System.Text;
 namespace Sharp.Xmpp.Core.Sasl.Mechanisms
 {
     /// <summary>
-    /// Implements the Sasl SCRAM-SHA-1 authentication method as described in
-    /// RFC 5802.
+    /// Implements the Sasl SCRAM-SHA-512 authentication method as described in
+    /// https://tools.ietf.org/id/draft-melnikov-scram-sha-512-01.html
     /// </summary>
     internal class SaslScramSha512 : SaslMechanism
     {
@@ -20,7 +20,7 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         private string Cnonce = GenerateCnonce();
 
         /// <summary>
-        /// Scram-Sha-1 involves several steps.
+        /// Scram-Sha-512 involves several steps.
         /// </summary>
         private int Step = 0;
 
@@ -60,8 +60,8 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         }
 
         /// <summary>
-        /// The IANA name for the Scram-Sha-1 authentication mechanism as described
-        /// in RFC 5802.
+        /// The IANA name for the Scram-Sha-512 authentication mechanism as described
+        /// in https://tools.ietf.org/id/draft-melnikov-scram-sha-512-01.html
         /// </summary>
         public override string Name
         {
@@ -131,7 +131,7 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         }
 
         /// <summary>
-        /// Creates and initializes a new instance of the SaslScramSha1
+        /// Creates and initializes a new instance of the SaslScramSha512
         /// class using the specified username and password.
         /// </summary>
         /// <param name="username">The username to authenticate with.</param>
@@ -153,10 +153,10 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         }
 
         /// <summary>
-        /// Computes the client response to the specified SCRAM-SHA-1 challenge.
+        /// Computes the client response to the specified SCRAM-SHA-512 challenge.
         /// </summary>
         /// <param name="challenge">The challenge sent by the server</param>
-        /// <returns>The response to the SCRAM-SHA-1 challenge.</returns>
+        /// <returns>The response to the SCRAM-SHA-512 challenge.</returns>
         /// <exception cref="SaslException">The response could not be
         /// computed.</exception>
         protected override byte[] ComputeResponse(byte[] challenge)
@@ -302,16 +302,15 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         /// pseudorandom function (PRF) and with dkLen == output length of
         /// HMAC() == output length of H(). (Refer to RFC 5802, p.6)</remarks>
         private byte[] Hi(string password, string salt, int count)
-        {
+        {            
+            byte[] passwordBytes = Encoding.ASCII.GetBytes(password);
             // The salt is sent by the server as a base64-encoded string.
             byte[] saltBytes = Convert.FromBase64String(salt);
-            using (var db = new Rfc2898DeriveBytes(password, saltBytes, count))
-            {
-                // Generate 20 key bytes, which is the size of the hash result of SHA-1.
-                return db.GetBytes(20);
-            }
+            HMAC hmac = new System.Security.Cryptography.HMACSHA512(passwordBytes);
+            return PBKDF2(64, passwordBytes, saltBytes, count, hmac);
         }
 
+           
         /// <summary>
         /// Applies the HMAC keyed hash algorithm using the specified key to
         /// the specified input data.
@@ -342,16 +341,16 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         }
 
         /// <summary>
-        /// Applies the cryptographic hash function SHA-1 to the specified data
+        /// Applies the cryptographic hash function SHA-512 to the specified data
         /// array.
         /// </summary>
         /// <param name="data">The data array to apply the hash function to.</param>
         /// <returns>The hash value for the specified byte array.</returns>
         private byte[] H(byte[] data)
         {
-            using (var sha1 = new SHA1Managed())
+            using (var sha = new SHA512Managed())
             {
-                return sha1.ComputeHash(data);
+                return sha.ComputeHash(data);
             }
         }
 
@@ -388,7 +387,7 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         /// <returns>A random "cnonce-value" string.</returns>
         private static string GenerateCnonce()
         {
-            return Guid.NewGuid().ToString("N").Substring(0, 16);
+            return Guid.NewGuid().ToString("N").Substring(0, 24);
         }
 
         /// <summary>

@@ -303,13 +303,11 @@ namespace Sharp.Xmpp.Core.Sasl.Mechanisms
         /// HMAC() == output length of H(). (Refer to RFC 5802, p.6)</remarks>
         private byte[] Hi(string password, string salt, int count)
         {
+            byte[] passwordBytes = Encoding.ASCII.GetBytes(password);
             // The salt is sent by the server as a base64-encoded string.
             byte[] saltBytes = Convert.FromBase64String(salt);
-            using (var db = new Rfc2898DeriveBytes(password, saltBytes, count))
-            {
-                // Generate 20 key bytes, which is the size of the hash result of SHA-1.
-                return db.GetBytes(20);
-            }
+            HMAC hmac = new System.Security.Cryptography.HMACSHA1(passwordBytes);
+            return PBKDF2(20, passwordBytes, saltBytes, count, hmac);
         }
 
         /// <summary>

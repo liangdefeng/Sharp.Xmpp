@@ -915,14 +915,18 @@ namespace Sharp.Xmpp.Core
         {
             // Request the initial stream.
             XmlElement feats = InitiateStream(Hostname);
+            Console.WriteLine("Received:" + feats.ToXmlString());
+
             // Server supports TLS/SSL via STARTTLS.
             if (feats["starttls"] != null)
             {
                 // TLS is mandatory and user opted out of it.
                 if (feats["starttls"]["required"] != null && Tls == false)
                     throw new AuthenticationException("The server requires TLS/SSL.");
-                if (Tls)
-                    feats = StartTls(Hostname, Validate);
+                if (Tls) {
+                    feats = StartTls(Hostname, Validate);                    
+                }
+                    
             }
             // If no Username has been provided, don't perform authentication.
             if (Username == null)
@@ -942,6 +946,8 @@ namespace Sharp.Xmpp.Core
             try
             {
                 feats = Authenticate(list, Username, Password, Hostname);
+                Console.WriteLine("Received:" + feats.ToXmlString());
+
                 // FIXME: How is the client's JID constructed if the server does not support
                 // resource binding?
                 if (feats["bind"] != null)
@@ -1007,8 +1013,7 @@ namespace Sharp.Xmpp.Core
             RemoteCertificateValidationCallback validate)
         {
             // Send STARTTLS command and ensure the server acknowledges the request.
-            SendAndReceive(Xml.Element("starttls",
-                "urn:ietf:params:xml:ns:xmpp-tls"), "proceed");
+            SendAndReceive(Xml.Element("starttls", "urn:ietf:params:xml:ns:xmpp-tls"), "proceed");
             // Complete TLS negotiation and switch to secure stream.
             SslStream sslStream = new SslStream(stream, false, validate ??
                 ((sender, cert, chain, err) => true));
@@ -1051,6 +1056,8 @@ namespace Sharp.Xmpp.Core
             while (true)
             {
                 XmlElement ret = parser.NextElement("challenge", "success", "failure");
+                Console.WriteLine("Received:" + ret.ToXmlString());
+
                 if (ret.Name == "failure")
                     throw new SaslException("SASL authentication failed.");
                 if (ret.Name == "success" && m.IsCompleted)
@@ -1058,6 +1065,8 @@ namespace Sharp.Xmpp.Core
                 // Server has successfully authenticated us, but mechanism still needs
                 // to verify server's signature.
                 string response = m.GetResponse(ret.InnerText);
+
+                
                 // If the response is the empty string, the server's signature has been
                 // verified.
                 if (ret.Name == "success")
@@ -1087,8 +1096,9 @@ namespace Sharp.Xmpp.Core
         /// the list of mechanisms advertised by the server.</exception>
         private string SelectMechanism(IEnumerable<string> mechanisms)
         {
-            // Precedence: SCRAM-SHA-1, DIGEST-MD5, PLAIN.
-            string[] m = new string[] { "SCRAM-SHA-1", "DIGEST-MD5", "PLAIN" };
+            // Precedence: SCRAM-SHA-512, SCRAM-SHA-256, SCRAM-SHA-1, DIGEST-MD5, PLAIN.
+            string[] m = new string[] {"SCRAM-SHA-512", "SCRAM-SHA-256", "SCRAM-SHA-1", "DIGEST-MD5", "PLAIN" };
+            // string[] m = new string[] { "SCRAM-SHA-1", "DIGEST-MD5", "PLAIN" };
             for (int i = 0; i < m.Length; i++)
             {
                 if (mechanisms.Contains(m[i], StringComparer.InvariantCultureIgnoreCase))
@@ -1159,7 +1169,12 @@ namespace Sharp.Xmpp.Core
                 try
                 {
                     stream.Write(buf, 0, buf.Length);
-                    if (debugStanzas) System.Diagnostics.Debug.WriteLine(xml);
+                    Console.WriteLine("Sent:" + xml);
+
+                    if (debugStanzas)
+                    {                        
+                        System.Diagnostics.Debug.WriteLine(xml);
+                    }
                 }
                 catch (IOException e)
                 {
@@ -1203,7 +1218,9 @@ namespace Sharp.Xmpp.Core
             Send(element);
             try
             {
-                return parser.NextElement(expected);
+                XmlElement retElement = parser.NextElement(expected);                
+                Console.WriteLine("Received:" + retElement.ToXmlString());                
+                return retElement;
             }
             catch (XmppDisconnectionException e)
             {
@@ -1224,6 +1241,8 @@ namespace Sharp.Xmpp.Core
                 while (true)
                 {
                     XmlElement elem = parser.NextElement("iq", "message", "presence");
+                    Console.WriteLine("Received:" + elem.ToXmlString());
+
                     // Parse element and dispatch.
                     switch (elem.Name)
                     {
@@ -1279,7 +1298,11 @@ namespace Sharp.Xmpp.Core
                 try
                 {
                     Stanza stanza = stanzaQueue.Take(cancelDispatch.Token);
-                    if (debugStanzas) System.Diagnostics.Debug.WriteLine(stanza.ToString());
+                    Console.WriteLine("Received:" + stanza.ToString());
+                    if (debugStanzas)
+                    {                        
+                        System.Diagnostics.Debug.WriteLine(stanza.ToString());
+                    }
                     if (stanza is Iq)
                         Iq.Raise(this, new IqEventArgs(stanza as Iq));
                     else if (stanza is Message)
